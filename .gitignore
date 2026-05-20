@@ -1,0 +1,19 @@
+# Build output -- regenerated from data/schedules.json on every push.
+output/
+
+# Local scratch
+_icon_check/
+_survey.py
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

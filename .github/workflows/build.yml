@@ -1,0 +1,67 @@
+name: Build and Deploy
+
+# Rebuild whenever the data file, the build scripts, or the assets change.
+# Also runnable manually from the Actions tab.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/**'
+      - 'assets/**'
+      - 'parse_schedules.py'
+      - 'build_html.py'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+# Required for the GitHub Pages deploy action.
+permissions:
+  contents: read
+  pages:    write
+  id-token: write
+
+# Cancel in-flight runs when a new commit lands on main -- only the latest
+# build/deploy is meaningful.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Parse schedules
+        run: |
+          python parse_schedules.py \
+            --t2 data/schedules.json \
+            --out output
+
+      - name: Build static HTML
+        run: |
+          python build_html.py \
+            --json-dir output/json \
+            --out output/html \
+            --assets assets
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: output/html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url:  ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id:   deployment
+        uses: actions/deploy-pages@v4
